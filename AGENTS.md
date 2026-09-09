@@ -1,0 +1,1 @@
+For requested website changes, run npm test, commit the completed changes, and push to origin/main automatically. The user has requested automatic GitHub pushes. GitHub Actions publishes the site on every push. Never commit secret or service-role credentials.

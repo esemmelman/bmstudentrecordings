@@ -1,0 +1,6 @@
+{
+  "name": "bmstudentrecordings",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test", "push": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/push.ps1" }
+}
