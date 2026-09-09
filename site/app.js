@@ -5,7 +5,9 @@ let playRequest = 0;
 let objectUrl;
 function render() {
   const query = $('search').value.trim().toLowerCase();
-  const visible = records.filter(row => String(row.name ?? '').toLowerCase().includes(query));
+  const visible = records.filter(row => String(row.name ?? '').toLowerCase().includes(query))
+    .sort((a, b) => String(a.name ?? '').localeCompare(String(b.name ?? ''), 'en', { sensitivity: 'base' })
+      || String(b.start_time_pacific ?? '').localeCompare(String(a.start_time_pacific ?? '')));
   $('recordings').replaceChildren();
   for (const row of visible) {
     const tr = document.createElement('tr');
