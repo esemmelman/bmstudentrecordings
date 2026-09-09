@@ -3,9 +3,9 @@ const $ = id => document.getElementById(id);
 let records = [];
 let playRequest = 0;
 let objectUrl;
+let loading = false;
 function render() {
-  const query = $('search').value.trim().toLowerCase();
-  const visible = records.filter(row => String(row.name ?? '').toLowerCase().includes(query))
+  const visible = [...records]
     .sort((a, b) => String(a.name ?? '').localeCompare(String(b.name ?? ''), 'en', { sensitivity: 'base' })
       || String(b.start_time_pacific ?? '').localeCompare(String(a.start_time_pacific ?? '')));
   $('recordings').replaceChildren();
@@ -45,16 +45,15 @@ function render() {
     tr.append(name, time, playback);
     $('recordings').append(tr);
   }
-  $('status').textContent = records.length === 0 ? 'No recordings yet. New recordings will appear here when available.' : visible.length === 0 ? 'No recordings match your search.' : `${visible.length} recording${visible.length === 1 ? '' : 's'}`;
+  $('status').textContent = records.length === 0 ? 'No recordings yet. New recordings will appear here when available.' : '';
+  $('status').hidden = records.length > 0;
 }
 async function load() {
-  $('refresh').disabled = true;
-  $('status').textContent = 'Loading recordings…';
-  try { records = await fetchRecordings(); render(); } catch (error) { $('status').textContent = `${error.message}${records.length ? ' Previously loaded recordings are still shown.' : ''}`; }
-  finally { $('refresh').disabled = false; }
+  loading = true;
+  if (!records.length) { $('status').hidden = false; $('status').textContent = 'Loading recordings…'; }
+  try { records = await fetchRecordings(); render(); } catch (error) { $('status').hidden = false; $('status').textContent = `${error.message}${records.length ? ' Previously loaded recordings are still shown.' : ''} Retrying automatically in one minute.`; }
+  finally { loading = false; }
 }
 $('audio').addEventListener('error', () => { $('playback-status').textContent = 'This recording could not be played. Try opening it directly.'; });
-$('search').addEventListener('input', render);
-$('refresh').addEventListener('click', load);
 load();
-setInterval(() => { if (!document.hidden && !$('refresh').disabled) load(); }, 60000);
+setInterval(() => { if (!document.hidden && !loading) load(); }, 60000);
