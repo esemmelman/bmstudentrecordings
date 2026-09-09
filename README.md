@@ -4,7 +4,7 @@ Live website: https://esemmelman.github.io/bmstudentrecordings/
 
 Displays `name`, `start_time_pacific`, and clickable `playback_url` from Supabase's `public.brady_torah_passage_recordings_v1`. Dates use `m/d ddd h:mm am/pm` without shifting the Pacific wall-clock database values into the visitor's timezone. Links start the shared audio player; a direct link is available if the browser cannot play the source format.
 
-The page fetches live data on load, on Refresh, and every minute while visible. No rebuild is needed for new database records. The source table was empty at initial deployment.
+The page fetches live data on load, on Refresh, and every minute while visible. No rebuild is needed for new database records. Existing Brady player links are resolved using their recording ID and the existing per-recording access policy, then played as audio in the page.
 
 ## Database access
 

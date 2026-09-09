@@ -1,7 +1,8 @@
-import { formatPacific, playableUrl, fetchRecordings } from './recordings.js';
+import { formatPacific, playableUrl, fetchRecordings, resolveAudio } from './recordings.js';
 const $ = id => document.getElementById(id);
 let records = [];
 let playRequest = 0;
+let objectUrl;
 function render() {
   const query = $('search').value.trim().toLowerCase();
   const visible = records.filter(row => String(row.name ?? '').toLowerCase().includes(query));
@@ -25,10 +26,17 @@ function render() {
         $('audio').pause();
         $('player-panel').hidden = false;
         $('playing-name').textContent = name.textContent;
-        $('playback-status').textContent = '';
+        $('playback-status').textContent = 'Loading audio…';
         $('open-recording').href = url;
-        $('audio').src = url;
-        try { await $('audio').play(); } catch { if (request === playRequest) $('playback-status').textContent = 'Playback could not start. Try the player controls or open the recording.'; }
+        try {
+          const source = await resolveAudio(url);
+          if (request !== playRequest) { if (source.startsWith('blob:')) URL.revokeObjectURL(source); return; }
+          if (objectUrl) URL.revokeObjectURL(objectUrl);
+          objectUrl = source.startsWith('blob:') ? source : null;
+          $('audio').src = source;
+          $('playback-status').textContent = '';
+          await $('audio').play();
+        } catch { if (request === playRequest) $('playback-status').textContent = 'Playback could not start. Try the player controls or open the recording.'; }
       });
       playback.append(link);
     } else playback.textContent = 'Not available';
