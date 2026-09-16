@@ -17,7 +17,7 @@ export function playableUrl(value) {
 
 export async function resolveAudio(url, fetcher = fetch) {
   const parsed = new URL(url);
-  if (parsed.origin !== 'https://esemmelman.github.io' || parsed.pathname !== '/bradytorah/recording.html') return url;
+  if (parsed.origin !== 'https://esemmelman.github.io' || !['/bradytorah/recording.html', '/aria-torah/recording.html'].includes(parsed.pathname)) return url;
   const id = parsed.hash.slice(1);
   if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(id)) throw new Error('Invalid recording link.');
   const response = await fetcher(`https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/brady_torah_passage_recordings_v1?id=eq.${id}&select=mime_type,audio_base64`, {
