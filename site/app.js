@@ -7,6 +7,7 @@ let loading = false;
 let category = 'torah';
 let loadRequest = 0;
 function render() {
+  $('prayer-heading').hidden = category !== 'service';
   const visible = [...records]
     .sort((a, b) => String(a.name ?? '').localeCompare(String(b.name ?? ''), 'en', { sensitivity: 'base' })
       || String(b.start_time_pacific ?? '').localeCompare(String(a.start_time_pacific ?? '')));
@@ -14,7 +15,9 @@ function render() {
   for (const row of visible) {
     const tr = document.createElement('tr');
     const name = document.createElement('td');
-    name.textContent = category === 'service' ? (row.passage_key_text || row.name || 'Untitled recording') : (row.name || 'Untitled recording');
+    name.textContent = row.name || 'Untitled recording';
+    const prayer = document.createElement('td');
+    prayer.textContent = row.passage_key_text || '—';
     const time = document.createElement('td');
     time.textContent = formatPacific(row.start_time_pacific);
     const playback = document.createElement('td');
@@ -23,13 +26,13 @@ function render() {
       const link = document.createElement('a');
       link.href = url;
       link.textContent = '▶ Play recording';
-      link.setAttribute('aria-label', `Play ${name.textContent}`);
+      link.setAttribute('aria-label', `Play ${category === 'service' ? `${name.textContent}: ${prayer.textContent}` : name.textContent}`);
       link.addEventListener('click', async event => {
         event.preventDefault();
         const request = ++playRequest;
         $('audio').pause();
         $('player-panel').hidden = false;
-        $('playing-name').textContent = name.textContent;
+        $('playing-name').textContent = category === 'service' ? `${name.textContent}: ${prayer.textContent}` : name.textContent;
         $('playback-status').textContent = 'Loading audio…';
         $('open-recording').hidden = category === 'service';
         if (category !== 'service') $('open-recording').href = url;
@@ -45,7 +48,9 @@ function render() {
       });
       playback.append(link);
     } else playback.textContent = 'Not available';
-    tr.append(name, time, playback);
+    tr.append(name);
+    if (category === 'service') tr.append(prayer);
+    tr.append(time, playback);
     $('recordings').append(tr);
   }
   $('status').textContent = records.length === 0 ? 'No recordings yet. New recordings will appear here when available.' : '';
@@ -63,6 +68,7 @@ $('audio').addEventListener('error', () => { $('playback-status').textContent = 
 document.querySelectorAll('input[name="category"]').forEach(input => input.addEventListener('change', () => {
   if (!input.checked) return;
   category = input.value;
+  $('prayer-heading').hidden = category !== 'service';
   records = [];
   ++playRequest;
   $('audio').pause();
