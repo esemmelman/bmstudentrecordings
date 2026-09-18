@@ -23,6 +23,18 @@ test('pagination handles server limits smaller than requested', async () => {
 test('service failures are not mistaken for an empty library', async () => {
   await assert.rejects(fetchRecordings(async () => ({ ok: false, status: 403 })), /403/);
 });
+test('service selection uses the service listing and audio table', async () => {
+  const id = '824f23e6-480e-46ec-85b2-460f846cf8e8';
+  await fetchRecordings(async url => {
+    assert.match(url.pathname, /list_brady_service_recordings$/);
+    return { ok: true, json: async () => [] };
+  }, 'service');
+  const source = await resolveAudio(`https://example.com/#${id}`, async url => {
+    assert.match(url, /bradymenu_service_recordings_v1/);
+    return { ok: true, json: async () => [{ mime_type: 'audio/webm', audio_base64: 'AA==' }] };
+  }, 'service');
+  URL.revokeObjectURL(source);
+});
 test('Brady and Aria player links resolve through the recording table', async () => {
   const id = '824f23e6-480e-46ec-85b2-460f846cf8e8';
   for (const path of ['bradytorah', 'aria-torah']) {

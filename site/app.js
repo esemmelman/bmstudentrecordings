@@ -4,6 +4,8 @@ let records = [];
 let playRequest = 0;
 let objectUrl;
 let loading = false;
+let category = 'torah';
+let loadRequest = 0;
 function render() {
   const visible = [...records]
     .sort((a, b) => String(a.name ?? '').localeCompare(String(b.name ?? ''), 'en', { sensitivity: 'base' })
@@ -12,11 +14,11 @@ function render() {
   for (const row of visible) {
     const tr = document.createElement('tr');
     const name = document.createElement('td');
-    name.textContent = row.name || 'Untitled recording';
+    name.textContent = category === 'service' ? (row.passage_key_text || row.name || 'Untitled recording') : (row.name || 'Untitled recording');
     const time = document.createElement('td');
     time.textContent = formatPacific(row.start_time_pacific);
     const playback = document.createElement('td');
-    const url = playableUrl(row.playback_url);
+    const url = category === 'service' && /^[0-9a-f-]{36}$/i.test(row.id) ? `${location.origin}${location.pathname}#${row.id}` : playableUrl(row.playback_url);
     if (url) {
       const link = document.createElement('a');
       link.href = url;
@@ -29,9 +31,10 @@ function render() {
         $('player-panel').hidden = false;
         $('playing-name').textContent = name.textContent;
         $('playback-status').textContent = 'Loading audio…';
-        $('open-recording').href = url;
+        $('open-recording').hidden = category === 'service';
+        if (category !== 'service') $('open-recording').href = url;
         try {
-          const source = await resolveAudio(url);
+          const source = await resolveAudio(url, fetch, category);
           if (request !== playRequest) { if (source.startsWith('blob:')) URL.revokeObjectURL(source); return; }
           if (objectUrl) URL.revokeObjectURL(objectUrl);
           objectUrl = source.startsWith('blob:') ? source : null;
@@ -49,11 +52,24 @@ function render() {
   $('status').hidden = records.length > 0;
 }
 async function load() {
+  const request = ++loadRequest;
+  const selected = category;
   loading = true;
   if (!records.length) { $('status').hidden = false; $('status').textContent = 'Loading recordings…'; }
-  try { records = await fetchRecordings(); render(); } catch (error) { $('status').hidden = false; $('status').textContent = `${error.message}${records.length ? ' Previously loaded recordings are still shown.' : ''} Retrying automatically in one minute.`; }
-  finally { loading = false; }
+  try { const next = await fetchRecordings(fetch, selected); if (request === loadRequest) { records = next; render(); } } catch (error) { if (request === loadRequest) { $('status').hidden = false; $('status').textContent = `${error.message}${records.length ? ' Previously loaded recordings are still shown.' : ''} Retrying automatically in one minute.`; } }
+  finally { if (request === loadRequest) loading = false; }
 }
 $('audio').addEventListener('error', () => { $('playback-status').textContent = 'This recording could not be played. Try opening it directly.'; });
+document.querySelectorAll('input[name="category"]').forEach(input => input.addEventListener('change', () => {
+  if (!input.checked) return;
+  category = input.value;
+  records = [];
+  ++playRequest;
+  $('audio').pause();
+  $('audio').removeAttribute('src');
+  $('player-panel').hidden = true;
+  $('recordings').replaceChildren();
+  load();
+}));
 load();
 setInterval(() => { if (!document.hidden && !loading) load(); }, 60000);
