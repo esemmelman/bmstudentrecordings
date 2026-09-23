@@ -35,14 +35,14 @@ test('service selection uses the service listing and audio table', async () => {
   }, 'service');
   URL.revokeObjectURL(source);
 });
-test('Brady and Aria player links resolve through the recording table', async () => {
+test('student player links resolve through the correct recording table', async () => {
   const id = '824f23e6-480e-46ec-85b2-460f846cf8e8';
-  for (const path of ['bradytorah', 'aria-torah']) {
+  for (const path of ['bradytorah', 'aria-torah', 'viviennetorah']) {
     const link = `https://esemmelman.github.io/${path}/recording.html#${id}`;
     let requested = false;
     const source = await resolveAudio(link, async (url, options) => {
       requested = true;
-      assert.match(url, /brady_torah_passage_recordings_v1/);
+      assert.ok(url.includes(path === 'viviennetorah' ? '/vivienne_torah_passage_recordings_v1?' : '/brady_torah_passage_recordings_v1?'));
       assert.equal(options.headers['x-recording-id'], id);
       return { ok: true, json: async () => [{ mime_type: 'audio/webm', audio_base64: 'AA==' }] };
     });

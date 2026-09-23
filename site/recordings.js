@@ -18,10 +18,15 @@ export function playableUrl(value) {
 export async function resolveAudio(url, fetcher = fetch, category = 'torah') {
   const parsed = new URL(url);
   const service = category === 'service';
-  if (!service && (parsed.origin !== 'https://esemmelman.github.io' || !['/bradytorah/recording.html', '/aria-torah/recording.html'].includes(parsed.pathname))) return url;
+  const torahTables = {
+    '/bradytorah/recording.html': 'brady_torah_passage_recordings_v1',
+    '/aria-torah/recording.html': 'brady_torah_passage_recordings_v1',
+    '/viviennetorah/recording.html': 'vivienne_torah_passage_recordings_v1'
+  };
+  if (!service && (parsed.origin !== 'https://esemmelman.github.io' || !Object.hasOwn(torahTables, parsed.pathname))) return url;
   const id = parsed.hash.slice(1);
   if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(id)) throw new Error('Invalid recording link.');
-  const table = service ? 'bradymenu_service_recordings_v1' : 'brady_torah_passage_recordings_v1';
+  const table = service ? 'bradymenu_service_recordings_v1' : torahTables[parsed.pathname];
   const response = await fetcher(`https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/${table}?id=eq.${id}&select=mime_type,audio_base64`, {
     headers: { apikey: 'sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i', 'x-recording-id': id }, signal: AbortSignal.timeout(30000)
   });
