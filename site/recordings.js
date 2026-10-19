@@ -1,3 +1,17 @@
+export function compareRecordings(a, b) {
+  const nameOrder = String(a.name ?? '').trim().localeCompare(String(b.name ?? '').trim(), 'en', { sensitivity: 'base' });
+  if (nameOrder) return nameOrder;
+  // Compare Pacific wall-clock values consistently, whether separated by T or a space.
+  const timestamp = value => {
+    const match = String(value ?? '').match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2}(?:\.\d+)?)/);
+    const time = match ? Date.parse(`${match[1]}T${match[2]}Z`) : NaN;
+    return Number.isFinite(time) ? time : -Infinity;
+  };
+  const first = timestamp(a.start_time_pacific);
+  const second = timestamp(b.start_time_pacific);
+  return first === second ? 0 : second > first ? 1 : -1;
+}
+
 export function formatPacific(value) {
   if (!value) return '—';
   // This database column is a Pacific wall-clock timestamp WITHOUT a zone.

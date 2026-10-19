@@ -1,4 +1,4 @@
-import { formatPacific, playableUrl, fetchRecordings, resolveAudio } from './recordings.js';
+import { compareRecordings, formatPacific, playableUrl, fetchRecordings, resolveAudio } from './recordings.js';
 const $ = id => document.getElementById(id);
 let records = [];
 let playRequest = 0;
@@ -8,9 +8,7 @@ let category = 'torah';
 let loadRequest = 0;
 function render() {
   $('prayer-heading').hidden = category !== 'service';
-  const visible = [...records]
-    .sort((a, b) => String(a.name ?? '').localeCompare(String(b.name ?? ''), 'en', { sensitivity: 'base' })
-      || String(b.start_time_pacific ?? '').localeCompare(String(a.start_time_pacific ?? '')));
+  const visible = [...records].sort(compareRecordings);
   $('recordings').replaceChildren();
   for (const row of visible) {
     const tr = document.createElement('tr');
